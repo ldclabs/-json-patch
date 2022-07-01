@@ -83,7 +83,7 @@ var (
 
 // Equal indicates if 2 JSON documents have the same structural equality.
 func Equal(a, b []byte) bool {
-	return NewNode(a).equal(NewNode(b))
+	return NewNode(a).Equal(NewNode(b))
 }
 
 // Operation is a single JSON-Patch step, such as a single 'add' operation.
@@ -534,7 +534,8 @@ func (n *Node) isNull() bool {
 	return isNull(*n.raw)
 }
 
-func (n *Node) equal(o *Node) bool {
+// Equal indicates if 2 JSON Nodes have the same structural equality.
+func (n *Node) Equal(o *Node) bool {
 	n.intoContainer()
 	if n.which == eOther {
 		if o.which == eDoc || o.which == eAry {
@@ -569,7 +570,7 @@ func (n *Node) equal(o *Node) bool {
 				continue
 			}
 
-			if !v.equal(ov) {
+			if !v.Equal(ov) {
 				return false
 			}
 		}
@@ -582,7 +583,7 @@ func (n *Node) equal(o *Node) bool {
 	}
 
 	for idx, val := range n.ary {
-		if !val.equal(o.ary[idx]) {
+		if !val.Equal(o.ary[idx]) {
 			return false
 		}
 	}
@@ -696,7 +697,7 @@ func (p Patch) test(doc *container, op Operation, options *Options) error {
 			self.which = eAry
 		}
 
-		if self.equal(NewNode(op.Value)) {
+		if self.Equal(NewNode(op.Value)) {
 			return nil
 		}
 
@@ -722,7 +723,7 @@ func (p Patch) test(doc *container, op Operation, options *Options) error {
 		return fmt.Errorf("testing value %s failed: %v", strconv.Quote(op.Path), ErrTestFailed)
 	}
 
-	if val.equal(NewNode(op.Value)) {
+	if val.Equal(NewNode(op.Value)) {
 		return nil
 	}
 

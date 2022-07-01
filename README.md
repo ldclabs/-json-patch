@@ -1,6 +1,9 @@
 # JSON-Patch
+[![ci](https://github.com/ldclabs/json-patch/actions/workflows/ci.yml/badge.svg)](https://github.com/ldclabs/json-patch/actions?query=workflow%3Aci)
+[![codecov](https://codecov.io/gh/ldclabs/json-patch/branch/main/graph/badge.svg?token=2G1SE83FY5)](https://codecov.io/gh/ldclabs/json-patch)
+
 `jsonpatch` is a library which provides functionality for applying
-[RFC6902 JSON patches](http://tools.ietf.org/html/rfc6902) on JSON.
+[RFC6902 JSON patches](https://datatracker.ietf.org/doc/html/rfc6902) on JSON.
 
 ## Documentation
 

@@ -114,7 +114,7 @@ import (
 )
 
 func main() {
-  doc := []byte(`{
+	doc := []byte(`{
 		"baz": "qux",
 		"foo": [ "a", 2, "c" ]
 	}`)

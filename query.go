@@ -20,9 +20,9 @@ func (n *Node) GetChild(path string, options *Options) (*Node, error) {
 	pd, err := n.intoContainer()
 	switch {
 	case err != nil:
-		return nil, err
+		return nil, fmt.Errorf("unexpected node %s, %v", strconv.Quote(n.String()), err)
 	case pd == nil:
-		return nil, fmt.Errorf("unexpected document: %s", strconv.Quote(n.GoString()))
+		return nil, fmt.Errorf("unexpected node %s", strconv.Quote(n.String()))
 	}
 
 	if options == nil {
@@ -30,7 +30,7 @@ func (n *Node) GetChild(path string, options *Options) (*Node, error) {
 	}
 	con, key := findObject(&pd, path, options)
 	if con == nil {
-		return nil, fmt.Errorf("unable to get child node by %s: %v", strconv.Quote(path), ErrMissing)
+		return nil, fmt.Errorf("unable to get child node by path %s, %v", strconv.Quote(path), ErrMissing)
 	}
 	return con.get(key, options)
 }
@@ -105,7 +105,7 @@ type nodePV struct {
 func toSubpaths(s string) ([]string, error) {
 	subpaths := strings.Split(s, "/")
 	if len(subpaths) < 2 || subpaths[0] != "" {
-		return nil, fmt.Errorf("invalid query path: %s", s)
+		return nil, fmt.Errorf("invalid query path %s", strconv.Quote(s))
 	}
 	return subpaths[1:], nil
 }

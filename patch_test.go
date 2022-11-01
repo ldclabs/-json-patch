@@ -61,7 +61,7 @@ func mustJSONString(arg interface{}) string {
 	if err != nil {
 		panic(err)
 	}
-	return reformatJSON(string(out))
+	return string(out)
 }
 
 func compareJSON(a, b string) bool {
@@ -1043,13 +1043,31 @@ func TestMaintainOrdering(t *testing.T) {
 	}
 }
 
-func TestNode(t *testing.T) {
+func TestNullNode(t *testing.T) {
 	assert := assert.New(t)
 
 	var n *Node
+	assert.True(n.isNull())
+	assert.True(n.Equal(NewNode(nil)))
 	assert.Equal("null", mustJSONString(n))
+
 	n = NewNode(nil)
+	assert.True(n.isNull())
+	assert.True(n.Equal(NewNode([]byte{})))
 	assert.Equal("null", mustJSONString(n))
+
 	n = NewNode([]byte{})
+	assert.True(n.isNull())
 	assert.Equal("null", mustJSONString(n))
+
+	n = NewNode([]byte(`[null]`))
+	assert.True(!n.isNull())
+	assert.True(n.Equal(NewNode([]byte(` [ null ] `))))
+	assert.Equal("[null]", mustJSONString(n))
+
+	n = NewNode([]byte(`{"key":null}`))
+	assert.True(!n.isNull())
+	assert.True(n.Equal(NewNode([]byte(`{ "key" : null }`))))
+	assert.False(n.Equal(NewNode([]byte(`{}`))))
+	assert.Equal(`{"key":null}`, mustJSONString(n))
 }

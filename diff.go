@@ -63,8 +63,9 @@ func (n *Node) diff(target *Node, c *collector) error {
 		return c.replaceOp(target)
 	}
 
-	n.intoContainer()
-	target.intoContainer()
+	if n.Equal(target) {
+		return nil
+	}
 
 	if target.which != n.which || target.which == eOther {
 		return c.replaceOp(target)

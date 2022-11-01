@@ -53,7 +53,54 @@ func TestCollector(t *testing.T) {
 	assert.Equal(Operation{Op: "remove", Path: "/a~1c"}, c.patch[2])
 }
 
-func TestDiff(t *testing.T) {
+type DiffCase struct {
+	src, dst, patch string
+}
+
+var DiffCases = []DiffCase{
+	{
+		`{"name": "John", "age": 24, "height": 3.21}`,
+		`{"name":"Jane","age":24}`,
+		`[{"op":"remove","path":"/height"},{"op":"replace","path":"/name","value":"Jane"}]`,
+	},
+	{
+		`[{"name": "John", "age": 24}]`,
+		`[{"age":24,"name":"John"}]`,
+		`[]`,
+	},
+	{
+		`[{"name": "John", "age": 24}]`,
+		`[{"age":24,"name":"John","address":null}]`,
+		`[{"op":"add","path":"/0/address","value":null}]`,
+	},
+	{
+		`[{"name": "John", "age": 24,"address":null}]`,
+		`[{"age":24,"name":"John"}]`,
+		`[{"op":"remove","path":"/0/address"}]`,
+	},
+	{
+		`[]`,
+		`[]`,
+		`[]`,
+	},
+	{
+		`{}`,
+		`{}`,
+		`[]`,
+	},
+	{
+		`{"key": {}}`,
+		`{"key": []}`,
+		`[{"op":"replace","path":"/key","value":[]}]`,
+	},
+	{
+		`{"key": []}`,
+		`{"key": { }}`,
+		`[{"op":"replace","path":"/key","value":{}}]`,
+	},
+}
+
+func TestAllCasesDiff(t *testing.T) {
 	assert := assert.New(t)
 
 	for i, c := range Cases {
@@ -72,5 +119,28 @@ func TestDiff(t *testing.T) {
 
 		assert.Truef(compareJSON(string(out), c.result), "Not equal at case %d\nSrc: %s\nDst: %s\nOut:%s\nPatch:%s\n",
 			i, reformatJSON(c.doc), reformatJSON(c.result), reformatJSON(string(out)), mustJSONString(patch))
+	}
+
+	for i, c := range DiffCases {
+		patch, err := Diff([]byte(c.src), []byte(c.dst))
+		if !assert.NoErrorf(err, "Failed to diff at case %d\nSrc: %s\nDst: %s\n",
+			i, reformatJSON(c.src), reformatJSON(c.dst)) {
+			continue
+		}
+
+		patchDoc := mustJSONString(patch)
+		if !assert.Equalf(c.patch, patchDoc, "patch not equal at case %d\nSrc: %s\nDst: %s\nOut:%s\nPatch:%s\n",
+			i, reformatJSON(c.src), reformatJSON(c.dst), patchDoc, c.patch) {
+			continue
+		}
+
+		out, err := patch.Apply([]byte(c.src))
+		if !assert.NoErrorf(err, "Failed to apply patch at case %d\nSrc: %s\nDst: %s\nPatch:%s\n",
+			i, reformatJSON(c.src), reformatJSON(c.dst), mustJSONString(patch)) {
+			continue
+		}
+
+		assert.Truef(compareJSON(string(out), c.dst), "Not equal at case %d\nSrc: %s\nDst: %s\nOut:%s\nPatch:%s\n",
+			i, reformatJSON(c.src), reformatJSON(c.dst), reformatJSON(string(out)), mustJSONString(patch))
 	}
 }

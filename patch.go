@@ -540,7 +540,7 @@ func (n *Node) intoContainer() (container, error) {
 }
 
 func (n *Node) isNull() bool {
-	if n.raw == nil {
+	if n == nil || n.raw == nil {
 		return true
 	}
 	return isNull(*n.raw)
@@ -548,6 +548,14 @@ func (n *Node) isNull() bool {
 
 // Equal indicates if two JSON Nodes have the same structural equality.
 func (n *Node) Equal(o *Node) bool {
+	if n.isNull() {
+		return o.isNull()
+	}
+
+	if o.isNull() {
+		return n.isNull()
+	}
+
 	n.intoContainer()
 	if n.which == eOther {
 		if o.which == eDoc || o.which == eAry {
@@ -568,21 +576,7 @@ func (n *Node) Equal(o *Node) bool {
 		}
 
 		for k, v := range n.doc.obj {
-			ov, ok := o.doc.obj[k]
-
-			if !ok {
-				return false
-			}
-
-			if (v == nil) != (ov == nil) {
-				return false
-			}
-
-			if v == nil && ov == nil {
-				continue
-			}
-
-			if !v.Equal(ov) {
+			if ov, ok := o.doc.obj[k]; !ok || !v.Equal(ov) {
 				return false
 			}
 		}

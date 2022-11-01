@@ -49,6 +49,36 @@ func main() {
 }
 ```
 
+### Create a JSON Patch from diff
+
+```go
+package main
+
+import (
+	"fmt"
+
+	jsonpatch "github.com/ldclabs/json-patch"
+)
+
+func main() {
+  original := []byte(`{"name": "John", "age": 24, "height": 3.21}`)
+	target := []byte(`{"name":"Jane","age":24}`)
+
+	patch, err := Diff(original, target)
+	if err != nil {
+		panic(err)
+	}
+	patchDoc, err := json.Marshal(patch)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s\n", patchDoc)
+
+	// Output:
+	// [{"op":"remove","path":"/height"},{"op":"replace","path":"/name","value":"Jane"}]
+}
+```
+
 ### Create a Node and apply more Patchs
 
 ```go

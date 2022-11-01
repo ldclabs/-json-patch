@@ -3,7 +3,10 @@
 
 package jsonpatch
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 func ExamplePatch_Apply() {
 	original := []byte(`{"name": "John", "age": 24, "height": 3.21}`)
@@ -24,6 +27,24 @@ func ExamplePatch_Apply() {
 
 	// Output:
 	// {"name":"Jane","age":24}
+}
+
+func ExampleDiff() {
+	original := []byte(`{"name": "John", "age": 24, "height": 3.21}`)
+	target := []byte(`{"name":"Jane","age":24}`)
+
+	patch, err := Diff(original, target)
+	if err != nil {
+		panic(err)
+	}
+	patchDoc, err := json.Marshal(patch)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s\n", patchDoc)
+
+	// Output:
+	// [{"op":"remove","path":"/height"},{"op":"replace","path":"/name","value":"Jane"}]
 }
 
 func ExampleNode_Patch() {

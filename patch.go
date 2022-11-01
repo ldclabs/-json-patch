@@ -58,7 +58,6 @@ var (
 
 var (
 	ErrMissing      = errors.New("missing value")
-	ErrUnknownType  = errors.New("unknown object type")
 	ErrInvalid      = errors.New("invalid node detected")
 	ErrInvalidIndex = errors.New("invalid index referenced")
 )
@@ -71,7 +70,6 @@ const (
 )
 
 var (
-	rawJSONNull   = []byte(`null`)
 	rawJSONArray  = []byte(`[]`)
 	rawJSONObject = []byte(`{}`)
 	startObject   = json.Delim('{')
@@ -162,12 +160,14 @@ type Node struct {
 // NewNode returns a new Node with the given raw encoded JSON document.
 // a nil or empty raw document is equal to JSON null.
 func NewNode(doc json.RawMessage) *Node {
+	var raw json.RawMessage
 	if len(doc) == 0 {
-		doc = rawJSONNull
+		raw = []byte("null")
+	} else {
+		raw = make(json.RawMessage, len(doc))
+		copy(raw, doc)
 	}
-	raw := make(json.RawMessage, len(doc))
-	copy(raw, doc)
-	return &Node{raw: &doc}
+	return &Node{raw: &raw}
 }
 
 // String returns a string representation of the node.
@@ -229,8 +229,11 @@ func (n *Node) Patch(p Patch, options *Options) error {
 
 // MarshalJSON implements the json.Marshaler interface.
 func (n *Node) MarshalJSON() ([]byte, error) {
-	n.intoContainer()
+	if n == nil {
+		return []byte("null"), nil
+	}
 
+	n.intoContainer()
 	switch n.which {
 	case eOther:
 		return json.Marshal(n.raw)
@@ -239,15 +242,20 @@ func (n *Node) MarshalJSON() ([]byte, error) {
 	case eAry:
 		return json.Marshal(n.ary)
 	default:
-		return nil, ErrUnknownType
+		return nil, errors.New("unknown node type")
 	}
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
 func (n *Node) UnmarshalJSON(data []byte) error {
 	if n == nil {
-		return errors.New("unexpected node, nil pointer")
+		return errors.New("nil node")
 	}
+
+	if !json.Valid(data) {
+		return errors.New("invalid JSON data")
+	}
+
 	if n.raw == nil {
 		raw := make(json.RawMessage, len(data))
 		n.raw = &raw
@@ -360,7 +368,7 @@ func (d *partialDoc) get(key string, options *Options) (*Node, error) {
 		return nil, fmt.Errorf("unable to get nonexistent key %q, %v", key, ErrMissing)
 	}
 	if v == nil {
-		v = NewNode(rawJSONNull)
+		v = NewNode(nil)
 	}
 	return v, nil
 }
@@ -458,7 +466,7 @@ func (d *partialArray) get(key string, options *Options) (*Node, error) {
 	}
 	v := (*d)[idx]
 	if v == nil {
-		v = NewNode(rawJSONNull)
+		v = NewNode(nil)
 	}
 	return v, nil
 }
@@ -538,7 +546,7 @@ func (n *Node) isNull() bool {
 	return isNull(*n.raw)
 }
 
-// Equal indicates if 2 JSON Nodes have the same structural equality.
+// Equal indicates if two JSON Nodes have the same structural equality.
 func (n *Node) Equal(o *Node) bool {
 	n.intoContainer()
 	if n.which == eOther {
@@ -829,7 +837,7 @@ func ensurePathExists(pd *container, path string, options *Options) error {
 				if ok && arrIndex >= len(*pa)+1 {
 					// Pad the array with null values up to the required index.
 					for i := len(*pa); i <= arrIndex-1; i++ {
-						doc.add(strconv.Itoa(i), NewNode(rawJSONNull), options)
+						doc.add(strconv.Itoa(i), NewNode(nil), options)
 					}
 				}
 			}
@@ -857,7 +865,7 @@ func ensurePathExists(pd *container, path string, options *Options) error {
 
 				// Pad the new array with null values up to the required index.
 				for i := 0; i < arrIndex; i++ {
-					doc.add(strconv.Itoa(i), NewNode(rawJSONNull), options)
+					doc.add(strconv.Itoa(i), NewNode(nil), options)
 				}
 			} else {
 				node := NewNode(rawJSONObject)

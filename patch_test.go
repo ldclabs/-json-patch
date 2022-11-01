@@ -45,6 +45,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func reformatJSON(j string) string {
@@ -52,6 +54,14 @@ func reformatJSON(j string) string {
 	json.Indent(buf, []byte(j), "", "  ")
 
 	return buf.String()
+}
+
+func mustJSONString(arg interface{}) string {
+	out, err := json.Marshal(arg)
+	if err != nil {
+		panic(err)
+	}
+	return reformatJSON(string(out))
 }
 
 func compareJSON(a, b string) bool {
@@ -1031,4 +1041,15 @@ func TestMaintainOrdering(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNode(t *testing.T) {
+	assert := assert.New(t)
+
+	var n *Node
+	assert.Equal("null", mustJSONString(n))
+	n = NewNode(nil)
+	assert.Equal("null", mustJSONString(n))
+	n = NewNode([]byte{})
+	assert.Equal("null", mustJSONString(n))
 }

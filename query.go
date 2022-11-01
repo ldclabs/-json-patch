@@ -6,6 +6,7 @@ package jsonpatch
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -128,7 +129,7 @@ func findChildNodes(
 				continue
 			}
 			r, e := findChildNodes(
-				n, value, fmt.Sprintf("%s/%d", parentpath, i), subpaths, options)
+				n, value, parentpath+"/"+strconv.Itoa(i), subpaths, options)
 			if e != nil {
 				return nil, e
 			}
@@ -142,7 +143,7 @@ func findChildNodes(
 				continue
 			}
 			r, e := findChildNodes(
-				n, value, fmt.Sprintf("%s/%s", parentpath, encodePatchKey(k)), subpaths, options)
+				n, value, parentpath+"/"+encodePatchKey(k), subpaths, options)
 			if e != nil {
 				return nil, e
 			}

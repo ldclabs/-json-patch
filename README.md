@@ -49,7 +49,7 @@ func main() {
 }
 ```
 
-### Create a JSON Patch from diff
+### Create a JSON Patch from Diff
 
 ```go
 package main
@@ -61,10 +61,10 @@ import (
 )
 
 func main() {
-  original := []byte(`{"name": "John", "age": 24, "height": 3.21}`)
+	original := []byte(`{"name": "John", "age": 24, "height": 3.21}`)
 	target := []byte(`{"name":"Jane","age":24}`)
 
-	patch, err := Diff(original, target)
+	patch, err := Diff(original, target, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -73,9 +73,18 @@ func main() {
 		panic(err)
 	}
 	fmt.Printf("%s\n", patchDoc)
-
-	// Output:
 	// [{"op":"remove","path":"/height"},{"op":"replace","path":"/name","value":"Jane"}]
+
+	patch, err = Diff(original, target, &jsonpatch.DiffOptions{IDKey: "name"})
+	if err != nil {
+		panic(err)
+	}
+	patchDoc, err = json.Marshal(patch)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s\n", patchDoc)
+	// [{"op":"replace","path":"","value":{"name":"Jane","age":24}}]
 }
 ```
 
@@ -105,7 +114,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-  modified, err := node.MarshalJSON()
+
+	modified, err := node.MarshalJSON()
 	if err != nil {
 		panic(err)
 	}

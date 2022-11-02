@@ -33,7 +33,7 @@ func ExampleDiff() {
 	original := []byte(`{"name": "John", "age": 24, "height": 3.21}`)
 	target := []byte(`{"name":"Jane","age":24}`)
 
-	patch, err := Diff(original, target)
+	patch, err := Diff(original, target, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -42,9 +42,22 @@ func ExampleDiff() {
 		panic(err)
 	}
 	fmt.Printf("%s\n", patchDoc)
+	// [{"op":"remove","path":"/height"},{"op":"replace","path":"/name","value":"Jane"}]
+
+	patch, err = Diff(original, target, &DiffOptions{IDKey: "name"})
+	if err != nil {
+		panic(err)
+	}
+	patchDoc, err = json.Marshal(patch)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s\n", patchDoc)
+	// [{"op":"replace","path":"","value":{"name":"Jane","age":24}}]
 
 	// Output:
 	// [{"op":"remove","path":"/height"},{"op":"replace","path":"/name","value":"Jane"}]
+	// [{"op":"replace","path":"","value":{"name":"Jane","age":24}}]
 }
 
 func ExampleNode_Patch() {

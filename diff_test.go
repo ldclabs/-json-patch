@@ -40,7 +40,7 @@ func TestCollector(t *testing.T) {
 	c.popPathToken()
 	assert.Equal("", c.path)
 
-	c.replaceOp(NewNode([]byte(`{}`)))
+	c.replaceOp("", NewNode([]byte(`{}`)))
 	assert.Equal(1, len(c.patch))
 	assert.Equal(Operation{Op: "replace", Path: "", Value: []byte(`{}`)}, c.patch[0])
 
@@ -54,46 +54,79 @@ func TestCollector(t *testing.T) {
 }
 
 type DiffCase struct {
+	idKey           string
 	src, dst, patch string
 }
 
 var DiffCases = []DiffCase{
 	{
+		``,
 		`{"name": "John", "age": 24, "height": 3.21}`,
 		`{"name":"Jane","age":24}`,
 		`[{"op":"remove","path":"/height"},{"op":"replace","path":"/name","value":"Jane"}]`,
 	},
 	{
+		`id`,
+		`{"name": "John", "age": 24, "height": 3.21}`,
+		`{"name":"Jane","age":24}`,
+		`[{"op":"remove","path":"/height"},{"op":"replace","path":"/name","value":"Jane"}]`,
+	},
+	{
+		`name`,
+		`{"name": "John", "age": 24, "height": 3.21}`,
+		`{"name":"Jane","age":24}`,
+		`[{"op":"replace","path":"","value":{"name":"Jane","age":24}}]`,
+	},
+	{
+		``,
 		`[{"name": "John", "age": 24}]`,
 		`[{"age":24,"name":"John"}]`,
 		`[]`,
 	},
 	{
+		``,
 		`[{"name": "John", "age": 24}]`,
 		`[{"age":24,"name":"John","address":null}]`,
 		`[{"op":"add","path":"/0/address","value":null}]`,
 	},
 	{
+		`name`,
+		`[{"name": "John", "age": 24}]`,
+		`[{"age":24,"name":"John","address":null}]`,
+		`[{"op":"add","path":"/0/address","value":null}]`,
+	},
+	{
+		``,
 		`[{"name": "John", "age": 24,"address":null}]`,
 		`[{"age":24,"name":"John"}]`,
 		`[{"op":"remove","path":"/0/address"}]`,
 	},
 	{
+		`name`,
+		`[{"name": "John", "age": 24,"address":null}]`,
+		`[{"age":24,"name":"John"}]`,
+		`[{"op":"remove","path":"/0/address"}]`,
+	},
+	{
+		``,
 		`[]`,
 		`[]`,
 		`[]`,
 	},
 	{
+		``,
 		`{}`,
 		`{}`,
 		`[]`,
 	},
 	{
+		``,
 		`{"key": {}}`,
 		`{"key": []}`,
 		`[{"op":"replace","path":"/key","value":[]}]`,
 	},
 	{
+		``,
 		`{"key": []}`,
 		`{"key": { }}`,
 		`[{"op":"replace","path":"/key","value":{}}]`,
@@ -105,7 +138,7 @@ func TestAllCasesDiff(t *testing.T) {
 
 	for i, c := range Cases {
 
-		patch, err := Diff([]byte(c.doc), []byte(c.result))
+		patch, err := Diff([]byte(c.doc), []byte(c.result), nil)
 		if !assert.NoErrorf(err, "Failed to diff at case %d\nSrc: %s\nDst: %s\n",
 			i, reformatJSON(c.doc), reformatJSON(c.result)) {
 			continue
@@ -122,7 +155,7 @@ func TestAllCasesDiff(t *testing.T) {
 	}
 
 	for i, c := range DiffCases {
-		patch, err := Diff([]byte(c.src), []byte(c.dst))
+		patch, err := Diff([]byte(c.src), []byte(c.dst), &DiffOptions{IDKey: c.idKey})
 		if !assert.NoErrorf(err, "Failed to diff at case %d\nSrc: %s\nDst: %s\n",
 			i, reformatJSON(c.src), reformatJSON(c.dst)) {
 			continue
